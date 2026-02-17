@@ -1,0 +1,59 @@
+#!/bin/bash
+# plsntMUL - PlantUML plugin for converting .plum files to PNG
+# Usage: plsntMUL <input.plum> [output.png]
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLANTUML_JAR="$SCRIPT_DIR/plantuml.jar"
+
+if [ ! -f "$PLANTUML_JAR" ]; then
+    echo "Error: PlantUML JAR not found at $PLANTUML_JAR"
+    exit 1
+fi
+
+if [ $# -lt 1 ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+    echo "Usage: plsntMUL <input.plum> [output.png]"
+    echo "Converts a .plum (PlantUML) file to PNG format"
+    exit 0
+fi
+
+INPUT_FILE="$1"
+OUTPUT_FILE="${2:-${INPUT_FILE%.plum}.png}"
+
+if [ ! -f "$INPUT_FILE" ]; then
+    echo "Error: Input file '$INPUT_FILE' not found"
+    exit 1
+fi
+
+echo "Converting $INPUT_FILE to PNG..."
+
+# Create output directory if it doesn't exist
+OUTPUT_DIR_TMP="$(dirname "$OUTPUT_FILE")"
+mkdir -p "$OUTPUT_DIR_TMP"
+
+# Get absolute paths for comparison
+OUTPUT_FILE="$(cd "$OUTPUT_DIR_TMP" && pwd)/$(basename "$OUTPUT_FILE")"
+OUTPUT_DIR="$(dirname "$OUTPUT_FILE")"
+OUTPUT_BASE="$(basename "$OUTPUT_FILE")"
+INPUT_BASE="$(basename "${INPUT_FILE%.plum}")"
+
+# PlantUML generates files in the output directory with the input file's base name
+java -jar "$PLANTUML_JAR" -tpng "$INPUT_FILE" -o "$OUTPUT_DIR"
+
+# PlantUML creates: output_dir/input_basename.png
+GENERATED_PNG="$OUTPUT_DIR/${INPUT_BASE}.png"
+
+# Rename if the output filename differs from what PlantUML generated
+if [ "$OUTPUT_FILE" != "$GENERATED_PNG" ]; then
+    if [ -f "$GENERATED_PNG" ]; then
+        mv "$GENERATED_PNG" "$OUTPUT_FILE"
+    fi
+fi
+
+if [ -f "$OUTPUT_FILE" ]; then
+    echo "Successfully generated: $OUTPUT_FILE"
+else
+    echo "Error: Failed to generate PNG output"
+    exit 1
+fi
