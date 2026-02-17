@@ -1,0 +1,43 @@
+#!/bin/bash
+# plsntMUL - PlantUML plugin for converting .plum files to PNG
+# Usage: plsntMUL <input.plum> [output.png]
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLANTUML_JAR="$SCRIPT_DIR/plantuml.jar"
+
+if [ ! -f "$PLANTUML_JAR" ]; then
+    echo "Error: PlantUML JAR not found at $PLANTUML_JAR"
+    exit 1
+fi
+
+if [ $# -lt 1 ]; then
+    echo "Usage: plsntMUL <input.plum> [output.png]"
+    echo "Converts a .plum (PlantUML) file to PNG format"
+    exit 1
+fi
+
+INPUT_FILE="$1"
+OUTPUT_FILE="${2:-${INPUT_FILE%.plum}.png}"
+
+if [ ! -f "$INPUT_FILE" ]; then
+    echo "Error: Input file '$INPUT_FILE' not found"
+    exit 1
+fi
+
+echo "Converting $INPUT_FILE to PNG..."
+java -jar "$PLANTUML_JAR" -tpng "$INPUT_FILE" -o "$(dirname "$OUTPUT_FILE")"
+
+# Rename if custom output name was specified
+GENERATED_PNG="${INPUT_FILE%.plum}.png"
+if [ "$OUTPUT_FILE" != "$GENERATED_PNG" ] && [ -f "$GENERATED_PNG" ]; then
+    mv "$GENERATED_PNG" "$OUTPUT_FILE"
+fi
+
+if [ -f "$OUTPUT_FILE" ]; then
+    echo "Successfully generated: $OUTPUT_FILE"
+else
+    echo "Error: Failed to generate PNG output"
+    exit 1
+fi
