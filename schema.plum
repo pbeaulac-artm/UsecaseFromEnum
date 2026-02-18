@@ -45,7 +45,7 @@ enum GetFromFileSystemUseCase {
     + {static} execute(path:repo:): String?
 }
 
-struct ImageContainer {
+class ImageContainer {
     - repo: ImageRepo
     --
     + init(environment: ImageEnvironment)
