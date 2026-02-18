@@ -1,0 +1,70 @@
+name: Update PlantUML Diagrams
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - '**.plum'
+      - '**.puml'
+      - '**.plantuml'
+
+jobs:
+  generate-diagrams:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          
+      - name: Install PlantUML
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y plantuml graphviz
+          
+      - name: Generate PNG from PlantUML files
+        run: |
+          # Find all .plum, .puml, and .plantuml files
+          for file in $(find . -type f \( -name "*.plum" -o -name "*.puml" -o -name "*.plantuml" \)); do
+            echo "Processing $file"
+            # Get the directory and filename without extension
+            dir=$(dirname "$file")
+            filename=$(basename "$file")
+            base="${filename%.*}"
+            
+            # Generate PNG in the Resources directory
+            if [ "$filename" = "schema.plum" ]; then
+              # Special case: schema.plum -> Resources/schema.png
+              plantuml -tpng "$file" -o Resources
+              echo "Generated Resources/$base.png from $file"
+            else
+              # Default: generate PNG in the same directory
+              plantuml -tpng "$file"
+              echo "Generated $dir/$base.png from $file"
+            fi
+          done
+          
+      - name: Check for changes
+        id: verify_diff
+        run: |
+          git diff --quiet . || echo "changed=true" >> $GITHUB_OUTPUT
+          
+      - name: Commit and push changes
+        if: steps.verify_diff.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add *.png */*.png
+          git commit -m "Auto-update PlantUML diagrams [skip ci]"
+          git push
