@@ -9,6 +9,7 @@ on:
       - '**.plum'
       - '**.puml'
       - '**.plantuml'
+  workflow_dispatch:
 
 jobs:
   generate-diagrams:
