@@ -1,57 +1,66 @@
 @startuml
 
-interface SomeRepo {
-    + getSomeRemoteData(): String
+interface ImageRepo {
+    + getFromBundle(named: String): String?
+    + getFromWeb(url: String): String?
+    + getFromFileSystem(path: String): String?
 }
 
-interface AnotherRepo {
-    + getAnotherData(): String
+class ImageProdRepo implements ImageRepo {
+    - cache: [String: String]
 }
 
-class SomeProdRepo implements SomeRepo
-class SomeDebugRepo implements SomeRepo
-class SomeMockRepo implements SomeRepo
+class ImageDebugRepo implements ImageRepo {
+    - cache: [String: String]
+}
 
-class AnotherProdRepo implements AnotherRepo
-class AnotherDebugRepo implements AnotherRepo
-class AnotherMockRepo implements AnotherRepo
+class ImageMockRepo implements ImageRepo
 
-enum SomeRepoEnvironment {
+enum ImageEnvironment {
     prod
     debug
     mock
+    custom(ImageRepo)
     --
-    + repo: SomeRepo
+    + repo: ImageRepo
 }
 
-enum AnotherRepoEnvironment {
-    prod
-    debug
-    mock
+ImageEnvironment --> ImageProdRepo : .prod
+ImageEnvironment --> ImageDebugRepo : .debug
+ImageEnvironment --> ImageMockRepo : .mock
+ImageEnvironment --> ImageRepo : .custom
+
+enum GetFromBundleUseCase {
     --
-    + repo: AnotherRepo
+    + {static} execute(named:repo:): String?
 }
 
-SomeRepoEnvironment --> SomeProdRepo : .prod
-SomeRepoEnvironment --> SomeDebugRepo : .debug
-SomeRepoEnvironment --> SomeMockRepo : .mock
-
-AnotherRepoEnvironment --> AnotherProdRepo : .prod
-AnotherRepoEnvironment --> AnotherDebugRepo : .debug
-AnotherRepoEnvironment --> AnotherMockRepo : .mock
-
-enum SomeUseCase {
+enum GetFromWebUseCase {
     --
-    + {static} execute(destination:time:environment:)
+    + {static} execute(url:repo:): String?
 }
 
-enum AnotherUseCase {
+enum GetFromFileSystemUseCase {
     --
-    + {static} execute(destination:time:environment:)
+    + {static} execute(path:repo:): String?
 }
 
-SomeUseCase --> SomeRepoEnvironment : uses
-AnotherUseCase --> AnotherRepoEnvironment : uses
+struct ImageContainer {
+    - repo: ImageRepo
+    --
+    + init(environment: ImageEnvironment)
+    + getFromBundle(named: String): String?
+    + getFromWeb(url: String): String?
+    + getFromFileSystem(path: String): String?
+}
+
+ImageContainer --> ImageEnvironment : init
+ImageContainer --> GetFromBundleUseCase : uses
+ImageContainer --> GetFromWebUseCase : uses
+ImageContainer --> GetFromFileSystemUseCase : uses
+
+GetFromBundleUseCase --> ImageRepo : uses
+GetFromWebUseCase --> ImageRepo : uses
+GetFromFileSystemUseCase --> ImageRepo : uses
 
 @enduml
-
