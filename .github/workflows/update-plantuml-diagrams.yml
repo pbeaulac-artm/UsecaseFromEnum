@@ -44,7 +44,7 @@ jobs:
             # Generate PNG in the Resources directory
             if [ "$filename" = "schema.plum" ]; then
               # Special case: schema.plum -> Resources/schema.png
-              plantuml -tpng "$file" -o "$(pwd)/Resources"
+              plantuml -tpng "$file" -o Resources
               echo "Generated Resources/$base.png from $file"
             else
               # Default: generate PNG in the same directory
@@ -63,6 +63,6 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add Resources/*.png **/*.png
+          git add *.png */*.png
           git commit -m "Auto-update PlantUML diagrams [skip ci]"
           git push
